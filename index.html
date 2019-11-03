@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Orders</title>
+    <link href="index.min.css" rel="stylesheet">
+    <script async src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.10/vue.min.js"></script>
+    <script src="index.js"></script>
+    <script id="tp-products" type="text/x-template">
+        <div id="products">
+            <div v-for="item in list" class="item">
+                <cp-product-entry :product="item"></cp-product-entry>
+            </div>
+        </div>
+    </script>
+    <script id="tp-product-entry" type="text/x-template">
+        <div class="product">
+            <button v-if="!orderEntry" @click="addItemToOrder(product)">+</button>
+            <button v-if="orderEntry" @click="removeItemFromOrder(orderEntry)">-</button>
+            <span class="name">{{product.name}}</span>
+            <span class="price">{{product.price | currency}}</span>
+            <input v-if="orderEntry" class="quantity" type="number" v-model.number="orderEntry.quantity">
+            <span v-if="orderEntry" class="sub-total">{{orderEntry.subTotal | currency}}</span>
+        </div>
+    </script>
+    <script id="tp-order" type="text/x-template">
+        <div id="order">
+            <div v-for="item in list" class="item">
+                <button @click="removeItemFromOrder(item)">-</button>
+                <span class="name">{{item.name}}</span>
+                <span class="price">{{item.price | currency}}</span>
+                <input class="quantity" type="number" v-model.number="item.quantity">
+                <span class="sub-total">{{item.subTotal | currency}}</span>
+            </div>
+        </div>
+    </script>
+    <script id="tp-resume" type="text/x-template">
+        <div id="resume">
+            <span>Items: {{list.length}}</span>
+            <span>Total: {{list.Total | currency}}</span>
+            <hr>
+            <div>
+                <code>{{JSON.stringify({ items: list, total: list.Total })}}</code>
+            </div>
+        </div>
+    </script>
+</head>
+
+<body>
+    <div id="app" v-cloak>
+        <cp-products></cp-products>
+        <hr>
+        <cp-order></cp-order>
+        <hr>
+        <cp-resume></cp-resume>
+    </div>
+</body>
+
+</html>
