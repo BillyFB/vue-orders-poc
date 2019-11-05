@@ -18,6 +18,10 @@ function orderEntry(prod) {
         enumerable: true, // Make it seriazable to JSON.
         get: () => this.price * this.quantity
     });
+    Object.defineProperty(this, '_refProduct', {
+        enumerable: false,
+        value: prod
+    });
 }
 
 Object.defineProperty(Data.Order, 'Total', {
@@ -29,16 +33,18 @@ Object.defineProperty(Data.Order, 'Total', {
     }
 });
 
-Data.Order.Add = function (item) {
-    var oe = new orderEntry(item);
+Data.Order.Add = function (product) {
+    var oe = new orderEntry(product);
     this.push(oe);
     return oe;
 };
 
-Data.Order.Remove = function (item) {
-    var pos = this.indexOf(item);
-    if (pos > -1)
+Data.Order.Remove = function (entry) {
+    var pos = this.indexOf(entry);
+    if (pos > -1){
         this.splice(pos, 1);
+        entry._refProduct._refOrderEntry = null;
+    }
 };
 
 var App;
@@ -59,11 +65,13 @@ function start() {
         props: {
             product: Object
         },
-        mounted: function () {
+        created: function() {
             var vm = this;
-            this.$root.$on("removedItemFromOrder", function (entry) {
-                if (vm.orderEntry && vm.orderEntry === entry)
-                    vm.orderEntry = null;
+            Object.defineProperty(this.product, '_refOrderEntry', {
+                enumerable: false,
+                set: function(value) {
+                    vm.orderEntry = value;
+                }
             });
         },
         methods: {
@@ -99,7 +107,6 @@ function start() {
         methods: {
             removeItemFromOrder: function (item) {
                 Data.Order.Remove(item);
-                App.$emit("removedItemFromOrder", item);
             }
         },
         template: "#tp-order"
