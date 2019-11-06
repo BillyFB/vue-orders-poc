@@ -15,7 +15,7 @@ function orderEntry(prod) {
 
     this.quantity = 1;
     Object.defineProperty(this, 'subTotal', {
-        enumerable: true, // Make it seriazable to JSON.
+        enumerable: true,
         get: () => this.price * this.quantity
     });
     Object.defineProperty(this, '_refProduct', {
@@ -24,28 +24,46 @@ function orderEntry(prod) {
     });
 }
 
+orderEntry.prototype.toJSON = function () {
+    var out = {};
+    for (p in this)
+        if (p[0] != "_")
+            out[p] = this[p];
+    return out;
+}
+
 Object.defineProperty(Data.Order, 'Total', {
-    get: function() {
+    get: function () {
         var total = 0;
-        if(this.length)
+        if (this.length)
             this.map(e => total += e.subTotal);
         return total;
     }
 });
 
 Data.Order.Add = function (product) {
-    var oe = new orderEntry(product);
-    this.push(oe);
-    return oe;
+    if (!product._refOrderEntry) {
+        var oe = new orderEntry(product);
+        product._refOrderEntry = oe;
+        this.push(oe);
+    }
 };
 
 Data.Order.Remove = function (entry) {
     var pos = this.indexOf(entry);
-    if (pos > -1){
+    if (pos > -1) {
         this.splice(pos, 1);
         entry._refProduct._refOrderEntry = null;
     }
 };
+
+Data.Products.map(e => {
+    Object.defineProperty(e, "_refOrderEntry", {
+        enumerable: true,
+        writable: true,
+        configurable: true
+    });
+});
 
 var App;
 function start() {
@@ -57,31 +75,20 @@ function start() {
     });
 
     Vue.component("cp-product-entry", {
-        data: () => {
-            return {
-                orderEntry: null
-            };
-        },
         props: {
             product: Object
         },
-        created: function() {
-            var vm = this;
-            Object.defineProperty(this.product, '_refOrderEntry', {
-                enumerable: false,
-                set: function(value) {
-                    vm.orderEntry = value;
-                }
-            });
+        computed: {
+            orderEntry: function () {
+                return this.product._refOrderEntry;
+            }
         },
         methods: {
             addItemToOrder: function (prod) {
-                this.orderEntry = Data.Order.Add(prod);
+                Data.Order.Add(prod);
             },
             removeItemFromOrder: function (entry) {
-                if (entry)
-                    Data.Order.Remove(entry);
-                this.orderEntry = null;
+                Data.Order.Remove(entry);
             }
         },
         template: "#tp-product-entry"
